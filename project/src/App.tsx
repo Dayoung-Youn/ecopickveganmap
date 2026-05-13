@@ -207,22 +207,17 @@ export default function App() {
   );
 
   const relatedPlaces = useMemo(() => {
-    // 1. 선택된 장소나 인스타 링크가 아예 없으면 빈 목록 반환
     if (!selectedPlace || !selectedPlace.postUrl) return [];
     
-    // 2. 링크 주소를 깨끗하게 정리 (양끝 공백 제거)
-    const targetUrl = String(selectedPlace.postUrl).trim();
+    const targetUrl = String(selectedPlace.postUrl).split('?')[0].trim();
     
-    // 3. 링크가 너무 짧거나 유효하지 않으면 리스트를 안 보여줌 (빈칸 매칭 방지)
     if (targetUrl.length < 10) return [];
 
     return places.filter((p) => {
       if (!p.postUrl) return false;
       
-      const compareUrl = String(p.postUrl).trim();
+      const compareUrl = String(p.postUrl).split('?')[0].trim();
       
-      // 4. 링크가 정확히 일치하고, '나 자신'이 아닌 다른 장소들만 모으기
-      // (만약 이름이 같아도 리스트에 나오길 원하시면 && 뒤를 지우시면 됩니다)
       return compareUrl === targetUrl && p.name !== selectedPlace.name;
     });
   }, [places, selectedPlace]);
