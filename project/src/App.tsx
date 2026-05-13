@@ -53,7 +53,7 @@ function colorForCategory(raw: string): string {
 function fitBoundsThenResizeWhenStill(
   mapInstance: mapboxgl.Map,
   bounds: mapboxgl.LngLatBoundsLike,
-  options: mapboxgl.FitBoundsOptions,
+  options: mapboxgl.FitBoundsOptions = {}, // 👈 1. 아무 값도 안 들어오면 빈 객체({})를 쓰도록 기본값을 줍니다.
 ): void {
   let finished = false;
   const finish = () => {
@@ -66,9 +66,12 @@ function fitBoundsThenResizeWhenStill(
   const onMoveEnd = () => finish();
   mapInstance.on('moveend', onMoveEnd);
   mapInstance.fitBounds(bounds, options);
-  const ms = typeof options.duration === 'number' ? options.duration : 0;
+  
+  // 👈 2. options.duration 앞에 물음표(?)를 붙여서 안전하게 확인합니다 (옵셔널 체이닝).
+  const ms = typeof options?.duration === 'number' ? options.duration : 0; 
   window.setTimeout(finish, ms + 150);
 }
+
 
 export default function App() {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -289,7 +292,9 @@ export default function App() {
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-olive-600">
               <Compass size={15} className="text-white" />
             </div>
-            <span className="text-sm font-bold tracking-tight text-charcoal-800">EcoMap</span>
+            <span className="text-xs font-bold leading-snug tracking-tight text-charcoal-800">
+              Veganmap @ecopick.mag
+            </span>
           </div>
           <div className="mx-2 h-px shrink-0 bg-cream-200" />
           <div className="min-h-0 flex-1 overflow-hidden pt-2">
