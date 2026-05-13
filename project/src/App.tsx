@@ -207,19 +207,18 @@ export default function App() {
   );
 
   const relatedPlaces = useMemo(() => {
-      // 선택된 장소가 없거나, 링크 속성 자체가 없으면 빈 배열 반환
-      if (!selectedPlace || !selectedPlace.postUrl) return [];
-      
-      // 1. 기준 장소 링크의 양옆 공백, 숨은 줄바꿈 완벽 제거
-      const targetUrl = selectedPlace.postUrl.trim();
-      if (targetUrl === '') return [];
-  
-      // 2. 다른 장소들도 공백을 다 떼고 순수 링크만 비교 + 자기 자신은 제외
-      return places.filter((p) => {
-        if (!p.postUrl) return false;
-        return p.postUrl.trim() === targetUrl && p.name !== selectedPlace.name;
-      });
-    }, [places, selectedPlace]);
+    if (!selectedPlace) return [];
+    
+    // 1. 만약 클릭한 장소의 링크가 비어있다면, 추천 장소도 띄우지 마!
+    if (!selectedPlace.postUrl || selectedPlace.postUrl.trim() === '') {
+      return [];
+    }
+
+    // 2. 링크가 정확히 일치하는 장소만 가져오되, '자기 자신'은 목록에서 제외해!
+    return places.filter(
+      (p) => p.postUrl === selectedPlace.postUrl && p.name !== selectedPlace.name
+    );
+  }, [places, selectedPlace]);
   
   const handleCategorySelect = useCallback(
     (cat: string | null) => {
