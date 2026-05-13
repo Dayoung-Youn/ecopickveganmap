@@ -1,0 +1,56 @@
+/*
+ * Outer node is the Mapbox Marker element — Mapbox owns transform for lng/lat.
+ * Do not set width/height/transform/filter here (avoids drift while zooming).
+ */
+.mapbox-marker-root {
+  position: relative;
+}
+
+.mapbox-marker-root--selected {
+  z-index: 1000;
+}
+
+/* Teardrop visuals live only on this inner shell */
+.custom-teardrop-marker {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 30px;
+  height: 30px;
+  margin-left: -15px;
+  box-sizing: border-box;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  transform-origin: 100% 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.28));
+  transition: transform 0.2s ease;
+}
+
+.mapbox-marker-root:hover .custom-teardrop-marker {
+  transform: rotate(-45deg) scale(1.1);
+}
+
+.mapbox-marker-root--selected .custom-teardrop-marker {
+  width: 34px;
+  height: 34px;
+  margin-left: -17px;
+}
+
+.custom-teardrop-marker__hole {
+  width: 9px;
+  height: 9px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.12);
+  flex-shrink: 0;
+}
+
+.mapbox-marker-root--selected .custom-teardrop-marker__hole {
+  width: 10px;
+  height: 10px;
+}
