@@ -208,17 +208,22 @@ export default function App() {
 
   const relatedPlaces = useMemo(() => {
     if (!selectedPlace || !selectedPlace.postUrl) return [];
-    
-    const targetUrl = String(selectedPlace.postUrl).split('?')[0].trim();
-    
-    if (targetUrl.length < 10) return [];
+
+    const getPostId = (url: string) => {
+      const str = String(url).trim();
+      if (!str.includes('/p/')) return str; // 일반 링크면 전체 주소 사용
+      return str.split('/p/')[1].split(/[/?]/)[0];
+    };
+
+    const targetId = getPostId(selectedPlace.postUrl);
+    if (!targetId) return [];
 
     return places.filter((p) => {
       if (!p.postUrl) return false;
       
-      const compareUrl = String(p.postUrl).split('?')[0].trim();
+      const compareId = getPostId(p.postUrl);
       
-      return compareUrl === targetUrl && p.name !== selectedPlace.name;
+      return compareId === targetId && p.name !== selectedPlace.name;
     });
   }, [places, selectedPlace]);
   
