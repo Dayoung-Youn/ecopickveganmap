@@ -206,9 +206,18 @@ export default function App() {
     [places, activeCategory],
   );
 
-  const relatedPlaces = useMemo(() => {
+const relatedPlaces = useMemo(() => {
     if (!selectedPlace) return [];
-    return places.filter((p) => p.postUrl === selectedPlace.postUrl);
+    
+    // 1. 만약 클릭한 장소의 링크가 비어있다면, 추천 장소도 띄우지 마!
+    if (!selectedPlace.postUrl || selectedPlace.postUrl.trim() === '') {
+      return [];
+    }
+
+    // 2. 링크가 정확히 일치하는 장소만 가져오되, '자기 자신'은 목록에서 제외해!
+    return places.filter(
+      (p) => p.postUrl === selectedPlace.postUrl && p.name !== selectedPlace.name
+    );
   }, [places, selectedPlace]);
 
   const handleCategorySelect = useCallback(
