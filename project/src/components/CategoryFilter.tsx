@@ -1,11 +1,18 @@
-import { Leaf, Recycle, Coffee, Store, Utensils, ShoppingBag, X } from 'lucide-react';
+import { Leaf, Recycle, Coffee, Store, Utensils, ShoppingBag, Map } from 'lucide-react';
 
 /** Match sheet labels with optional spaces (e.g. "비건 옵션") */
 function normCatLabel(s: string): string {
   return s.trim().replace(/\s+/g, '');
 }
 
-/** Inactive / active chip styles so 완전비건 vs 비건옵션 read as different greens */
+/** Drawer 표시용 (필터 값은 시트의 cat 그대로 유지) */
+export function categoryDisplayLabel(cat: string): string {
+  const n = normCatLabel(cat);
+  if (n === '완전비건') return '완전비건 All Vegan';
+  if (n === '비건옵션') return '비건옵션 Vegan-option';
+  return cat;
+}
+
 function categoryChipClasses(cat: string, isActive: boolean): string {
   const n = normCatLabel(cat);
   if (n === '완전비건') {
@@ -52,8 +59,8 @@ export default function CategoryFilter({ categories, active, onSelect }: Categor
             : 'bg-cream-100 text-charcoal-700 hover:bg-cream-200'
         }`}
       >
-        <X size={14} className="shrink-0" />
-        <span className="leading-snug">전체</span>
+        <Map size={14} className="shrink-0" />
+        <span className="leading-snug">전체 All Spots</span>
       </button>
       {categories.map((cat) => (
         <button
@@ -63,9 +70,9 @@ export default function CategoryFilter({ categories, active, onSelect }: Categor
           className={`flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-all duration-200 shrink-0 ${categoryChipClasses(cat, active === cat)}`}
         >
           <span className="shrink-0 flex items-center justify-center [&>svg]:block">
-            {CATEGORY_ICONS[cat] ?? <Leaf size={14} />}
+            {CATEGORY_ICONS[normCatLabel(cat)] ?? CATEGORY_ICONS[cat] ?? <Leaf size={14} />}
           </span>
-          <span className="leading-snug break-keep">{cat}</span>
+          <span className="leading-snug break-keep">{categoryDisplayLabel(cat)}</span>
         </button>
       ))}
     </div>
