@@ -207,14 +207,20 @@ export default function App() {
   );
 
   const relatedPlaces = useMemo(() => {
+    // 1. 선택된 장소가 없거나 링크 속성이 아예 없으면 패스
     if (!selectedPlace || !selectedPlace.postUrl) return [];
     
-    const targetUrl = selectedPlace.postUrl.trim();
-    if (targetUrl === '') return [];
+    // 2. 강제로 문자열(String)로 바꾼 뒤에 공백을 제거 (에러 원천 차단!)
+    const targetUrl = String(selectedPlace.postUrl).trim();
+    if (targetUrl === '' || targetUrl === 'undefined') return [];
 
     return places.filter((p) => {
       if (!p.postUrl) return false;
-      return p.postUrl.trim() === targetUrl && p.name !== selectedPlace.name;
+      
+      const compareUrl = String(p.postUrl).trim();
+      
+      // 3. 링크가 같고, 이름이 다른 장소만 반환
+      return compareUrl === targetUrl && p.name !== selectedPlace.name;
     });
   }, [places, selectedPlace]);
   
