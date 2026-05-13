@@ -207,17 +207,15 @@ export default function App() {
   );
 
   const relatedPlaces = useMemo(() => {
-    if (!selectedPlace) return [];
+    if (!selectedPlace || !selectedPlace.postUrl) return [];
     
-    // 1. 만약 클릭한 장소의 링크가 비어있다면, 추천 장소도 띄우지 마!
-    if (!selectedPlace.postUrl || selectedPlace.postUrl.trim() === '') {
-      return [];
-    }
+    const targetUrl = selectedPlace.postUrl.trim();
+    if (targetUrl === '') return [];
 
-    // 2. 링크가 정확히 일치하는 장소만 가져오되, '자기 자신'은 목록에서 제외해!
-    return places.filter(
-      (p) => p.postUrl === selectedPlace.postUrl && p.name !== selectedPlace.name
-    );
+    return places.filter((p) => {
+      if (!p.postUrl) return false;
+      return p.postUrl.trim() === targetUrl && p.name !== selectedPlace.name;
+    });
   }, [places, selectedPlace]);
   
   const handleCategorySelect = useCallback(
