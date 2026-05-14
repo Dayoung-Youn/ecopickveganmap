@@ -10,7 +10,9 @@ import type { Place } from './lib/types';
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
-const DRAWER_WIDTH_PX = 208; // matches Tailwind w-52
+const DRAWER_WIDTH_PX = 208; // matches Tailwind sm:w-52
+const MOBILE_DRAWER_HEIGHT_PX = 152; // matches mobile bottom drawer height
+const MOBILE_BREAKPOINT_PX = 640; // Tailwind sm breakpoint
 
 /** 한반도 전체 뷰 (전체 버튼·초기 카메라 고정; 마커로 계산하지 않음) */
 const KOREA_PENINSULA_BOUNDS = new mapboxgl.LngLatBounds([124.0, 33.0], [132.0, 43.0]);
@@ -86,9 +88,42 @@ export default function App() {
   const [drawerOpen, setDrawerOpen] = useState(true);
 
   const fitPadding = useCallback(() => {
+    if (window.innerWidth < MOBILE_BREAKPOINT_PX) {
+      return {
+        top: 64,
+        right: 48,
+        bottom: 64 + (drawerOpen ? MOBILE_DRAWER_HEIGHT_PX : 0),
+        left: 48,
+      };
+    }
+
     const left = 80 + (drawerOpen ? DRAWER_WIDTH_PX : 0);
     return { top: 80, right: 80, bottom: 80, left };
   }, [drawerOpen]);
+
+  const focusPlaceOnMap = useCallback(
+    (place: Place) => {
+      const m = map.current;
+      if (!m) return;
+
+      const isMobile = window.innerWidth < MOBILE_BREAKPOINT_PX;
+      const targetZoom = isMobile ? 11.4 : 12.2;
+      const currentZoom = m.getZoom();
+      const offset: [number, number] = isMobile
+        ? [0, -Math.min(window.innerHeight * 0.22, 190)]
+        : [drawerOpen ? 260 : 210, 0];
+
+      m.flyTo({
+        center: [place.lng, place.lat],
+        zoom: currentZoom > targetZoom ? targetZoom : Math.max(currentZoom, targetZoom),
+        offset,
+        speed: 1.1,
+        curve: 1.25,
+        essential: true,
+      });
+    },
+    [drawerOpen],
+  );
 
   // Initialize map
   useEffect(() => {
@@ -275,6 +310,7 @@ export default function App() {
       inner.addEventListener('click', (e) => {
         e.stopPropagation();
         setSelectedPlace(place);
+        focusPlaceOnMap(place);
       });
 
       const marker = new mapboxgl.Marker({ element: root, anchor: 'bottom' })
@@ -284,24 +320,22 @@ export default function App() {
       const markerKey = `${place.postUrl}::${place.name}::${index}`;
       markersRef.current[markerKey] = marker;
     });
-  }, [filtered, selectedPlace]);
+  }, [filtered, focusPlaceOnMap, selectedPlace]);
 
   const handlePlaceClick = useCallback((place: Place) => {
     setSelectedPlace(place);
-    if (map.current) {
-      map.current.flyTo({ center: [place.lng, place.lat], zoom: 13, speed: 1.2 });
-    }
-  }, []);
+    focusPlaceOnMap(place);
+  }, [focusPlaceOnMap]);
 
   return (
     <div className="relative w-full h-full bg-cream-50">
       <div ref={mapContainer} className="h-full w-full" />
 
       {/* Slide drawer + toggle tab */}
-      <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-0">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-0 sm:inset-x-auto sm:left-0 sm:top-0 sm:h-full sm:w-0">
         <div
-          className={`pointer-events-auto absolute left-0 top-0 flex h-full w-52 flex-col rounded-r-2xl border border-cream-200/80 bg-white/90 py-3 shadow-lg backdrop-blur-md transition-transform duration-300 ease-out ${
-            drawerOpen ? 'translate-x-0' : '-translate-x-full'
+          className={`pointer-events-auto absolute bottom-0 left-0 right-0 flex h-[152px] flex-col rounded-t-2xl border border-cream-200/80 bg-white/90 py-3 shadow-lg backdrop-blur-md transition-transform duration-300 ease-out sm:bottom-auto sm:right-auto sm:top-0 sm:h-full sm:w-52 sm:rounded-r-2xl sm:rounded-t-none ${
+            drawerOpen ? 'translate-y-0 sm:translate-x-0' : 'translate-y-full sm:-translate-x-full sm:translate-y-0'
           }`}
         >
           <div className="flex shrink-0 items-center gap-2 px-3 pb-2">
@@ -327,14 +361,20 @@ export default function App() {
           aria-expanded={drawerOpen}
           aria-label={drawerOpen ? '카테고리 서랍 접기' : '카테고리 서랍 펼치기'}
           onClick={() => setDrawerOpen((o) => !o)}
-          className={`pointer-events-auto absolute top-1/2 z-[11] flex h-24 w-9 -translate-y-1/2 items-center justify-center rounded-r-xl border border-cream-200/90 bg-white/95 shadow-md backdrop-blur-sm transition-[left] duration-300 ease-out hover:bg-white ${
-            drawerOpen ? 'left-52' : 'left-0'
+          className={`pointer-events-auto absolute left-1/2 z-[11] flex h-9 w-24 -translate-x-1/2 items-center justify-center rounded-t-xl border border-cream-200/90 bg-white/95 shadow-md backdrop-blur-sm transition-[bottom] duration-300 ease-out hover:bg-white sm:left-auto sm:top-1/2 sm:h-24 sm:w-9 sm:-translate-x-0 sm:-translate-y-1/2 sm:rounded-r-xl sm:rounded-t-none sm:transition-[left] ${
+            drawerOpen ? 'bottom-[152px] sm:left-52' : 'bottom-0 sm:left-0'
           }`}
         >
           {drawerOpen ? (
-            <ChevronLeft size={20} className="text-charcoal-600" />
+            <>
+              <ChevronLeft size={20} className="hidden text-charcoal-600 sm:block" />
+              <ChevronRight size={20} className="rotate-90 text-charcoal-600 sm:hidden" />
+            </>
           ) : (
-            <ChevronRight size={20} className="text-charcoal-600" />
+            <>
+              <ChevronRight size={20} className="hidden text-charcoal-600 sm:block" />
+              <ChevronLeft size={20} className="-rotate-90 text-charcoal-600 sm:hidden" />
+            </>
           )}
         </button>
       </div>

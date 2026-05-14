@@ -7,7 +7,7 @@
 }
 
 .mapbox-marker-root--selected {
-  z-index: 1000;
+  z-index: 30;
 }
 
 /* Teardrop visuals live only on this inner shell */

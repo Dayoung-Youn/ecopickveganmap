@@ -20,7 +20,7 @@ export default function PlacePopup({
 
   return (
     <div
-      className={`absolute bottom-0 left-0 right-0 sm:bottom-auto sm:top-0 z-20 w-full sm:w-96 bg-cream-50 shadow-2xl flex flex-col rounded-t-3xl sm:rounded-none sm:rounded-r-3xl max-h-[70vh] sm:max-h-screen animate-slide-up sm:animate-slide-in overflow-hidden ${
+      className={`absolute bottom-0 left-0 right-0 z-40 w-full bg-cream-50 shadow-2xl flex flex-col rounded-t-3xl max-h-[70vh] animate-slide-up overflow-hidden sm:bottom-auto sm:top-0 sm:w-96 sm:rounded-none sm:rounded-r-3xl sm:max-h-screen sm:animate-slide-in ${
         drawerOpen ? 'sm:left-52' : 'sm:left-3'
       }`}
     >

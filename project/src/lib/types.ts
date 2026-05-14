@@ -10,6 +10,7 @@ export interface Place {
 
 export interface CsvRow {
   '게시물 URL (Key)': string;
+  '게시물 인스타그램 URL (Key)'?: string;
   '장소명': string;
   '주소': string;
   '위도': string;

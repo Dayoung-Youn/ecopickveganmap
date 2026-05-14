@@ -49,11 +49,11 @@ interface CategoryFilterProps {
 
 export default function CategoryFilter({ categories, active, onSelect }: CategoryFilterProps) {
   return (
-    <div className="flex flex-col gap-2 w-full min-h-0 px-1 py-1 scrollbar-hide overflow-y-auto">
+    <div className="flex w-full min-h-0 gap-2 overflow-x-auto px-1 py-1 scrollbar-hide sm:flex-col sm:overflow-x-hidden sm:overflow-y-auto">
       <button
         type="button"
         onClick={() => onSelect(null)}
-        className={`flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-all duration-200 shrink-0 ${
+        className={`flex min-w-max items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-all duration-200 shrink-0 sm:w-full sm:min-w-0 ${
           active === null
             ? 'bg-olive-600 text-white shadow-md'
             : 'bg-cream-100 text-charcoal-700 hover:bg-cream-200'
@@ -67,7 +67,7 @@ export default function CategoryFilter({ categories, active, onSelect }: Categor
           type="button"
           key={cat}
           onClick={() => onSelect(cat === active ? null : cat)}
-          className={`flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-all duration-200 shrink-0 ${categoryChipClasses(cat, active === cat)}`}
+          className={`flex min-w-max items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-all duration-200 shrink-0 sm:w-full sm:min-w-0 ${categoryChipClasses(cat, active === cat)}`}
         >
           <span className="shrink-0 flex items-center justify-center [&>svg]:block">
             {CATEGORY_ICONS[normCatLabel(cat)] ?? CATEGORY_ICONS[cat] ?? <Leaf size={14} />}
