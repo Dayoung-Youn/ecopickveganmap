@@ -1,10 +1,12 @@
 import { X, MapPin, ExternalLink, Lightbulb } from 'lucide-react';
+import { UI_COPY, categoryDisplayLabel, type Language } from '../lib/i18n';
 import type { Place } from '../lib/types';
 
 interface PlacePopupProps {
   place: Place;
   related: Place[];
   drawerOpen?: boolean;
+  language: Language;
   onClose: () => void;
   onPlaceClick: (place: Place) => void;
 }
@@ -13,6 +15,7 @@ export default function PlacePopup({
   place,
   related,
   drawerOpen = true,
+  language,
   onClose,
   onPlaceClick,
 }: PlacePopupProps) {
@@ -49,7 +52,7 @@ export default function PlacePopup({
         </button>
         <div className="absolute bottom-3 left-4">
           <span className="inline-block rounded-full bg-olive-600/90 backdrop-blur-sm px-3 py-1 text-xs font-semibold text-white">
-            {place.category}
+            {categoryDisplayLabel(place.category, language)}
           </span>
         </div>
       </div>
@@ -70,7 +73,7 @@ export default function PlacePopup({
           <div>
             <div className="flex items-center gap-2 mb-3">
               <Lightbulb size={16} className="text-amber-500" />
-              <h3 className="text-sm font-bold text-charcoal-800">이 코스로 함께 소개된 장소들</h3>
+              <h3 className="text-sm font-bold text-charcoal-800">{UI_COPY[language].relatedPlaces}</h3>
             </div>
             <div className="space-y-2">
               {others.map((p) => (
@@ -96,7 +99,9 @@ export default function PlacePopup({
                     )}
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-charcoal-800 truncate">{p.name}</p>
-                      <p className="text-xs text-charcoal-500 truncate">{p.category}</p>
+                      <p className="text-xs text-charcoal-500 truncate">
+                        {categoryDisplayLabel(p.category, language)}
+                      </p>
                     </div>
                   </div>
                 </button>
@@ -117,12 +122,12 @@ export default function PlacePopup({
             className="flex items-center justify-center gap-2 w-full rounded-xl bg-gradient-to-r from-olive-600 to-olive-700 px-4 py-3 text-sm font-bold text-white shadow-md hover:shadow-lg hover:from-olive-700 hover:to-olive-800 transition-all duration-200"
           >
             <ExternalLink size={16} />
-            Instagram에서 자세히 보기
+            {UI_COPY[language].viewInstagram}
           </a>
         ) : (
           // 링크가 없는 경우 플레이스홀더 또는 버튼 숨김 처리
           <div className="text-center text-sm text-charcoal-500 py-2 border border-dashed border-cream-300 rounded-xl bg-white">
-            인스타그램 리뷰 링크가 없습니다.
+            {UI_COPY[language].noInstagram}
           </div>
         )}
       </div>

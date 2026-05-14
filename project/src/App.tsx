@@ -2,10 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import './App.css';
-import { ChevronLeft, ChevronRight, Compass } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Compass, Globe2 } from 'lucide-react';
 import CategoryFilter from './components/CategoryFilter';
 import PlacePopup from './components/PlacePopup';
 import { fetchPlaces } from './lib/fetchPlaces';
+import { LANGUAGES, UI_COPY, type Language } from './lib/i18n';
 import type { Place } from './lib/types';
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -86,6 +87,7 @@ export default function App() {
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(true);
+  const [language, setLanguage] = useState<Language>('en');
 
   const fitPadding = useCallback(() => {
     if (window.innerWidth < MOBILE_BREAKPOINT_PX) {
@@ -291,16 +293,17 @@ export default function App() {
 
     filtered.forEach((place, index) => {
       const color = colorForCategory(place.category);
+      const isSelected = selectedPlace?.name === place.name;
       /** Mapbox positions this node only — no custom transform/size on it (see App.css) */
       const root = document.createElement('div');
       root.className =
-        selectedPlace?.name === place.name
+        isSelected
           ? 'mapbox-marker-root mapbox-marker-root--selected'
           : 'mapbox-marker-root';
 
       const inner = document.createElement('div');
       inner.className = 'custom-teardrop-marker';
-      inner.style.backgroundColor = color;
+      inner.style.backgroundColor = isSelected ? '#f7f5ee' : color;
 
       const hole = document.createElement('div');
       hole.className = 'custom-teardrop-marker__hole';
@@ -331,6 +334,26 @@ export default function App() {
     <div className="relative w-full h-full bg-cream-50">
       <div ref={mapContainer} className="h-full w-full" />
 
+      <div className="absolute right-14 top-3 z-20 flex items-center gap-1 rounded-xl border border-cream-200/90 bg-white/95 p-1 shadow-md backdrop-blur-sm sm:right-16">
+        <Globe2 size={15} className="ml-1 text-olive-700" />
+        {LANGUAGES.map((item) => (
+          <button
+            key={item.code}
+            type="button"
+            aria-label={`Set language to ${item.label}`}
+            aria-pressed={language === item.code}
+            onClick={() => setLanguage(item.code)}
+            className={`h-7 rounded-lg px-2 text-[11px] font-bold transition-colors ${
+              language === item.code
+                ? 'bg-olive-600 text-white shadow-sm'
+                : 'text-charcoal-600 hover:bg-cream-100'
+            }`}
+          >
+            {item.shortLabel}
+          </button>
+        ))}
+      </div>
+
       {/* Slide drawer + toggle tab */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-0 sm:inset-x-auto sm:left-0 sm:top-0 sm:h-full sm:w-0">
         <div
@@ -351,6 +374,7 @@ export default function App() {
             <CategoryFilter
               categories={categories}
               active={activeCategory}
+              language={language}
               onSelect={handleCategorySelect}
             />
           </div>
@@ -359,7 +383,7 @@ export default function App() {
         <button
           type="button"
           aria-expanded={drawerOpen}
-          aria-label={drawerOpen ? '카테고리 서랍 접기' : '카테고리 서랍 펼치기'}
+          aria-label={drawerOpen ? UI_COPY[language].closeDrawer : UI_COPY[language].openDrawer}
           onClick={() => setDrawerOpen((o) => !o)}
           className={`pointer-events-auto absolute left-1/2 z-[11] flex h-9 w-24 -translate-x-1/2 items-center justify-center rounded-t-xl border border-cream-200/90 bg-white/95 shadow-md backdrop-blur-sm transition-[bottom] duration-300 ease-out hover:bg-white sm:left-auto sm:top-1/2 sm:h-24 sm:w-9 sm:-translate-x-0 sm:-translate-y-1/2 sm:rounded-r-xl sm:rounded-t-none sm:transition-[left] ${
             drawerOpen ? 'bottom-[152px] sm:left-52' : 'bottom-0 sm:left-0'
@@ -383,7 +407,7 @@ export default function App() {
         <div className="absolute inset-0 z-30 flex items-center justify-center bg-cream-50/80 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-3">
             <div className="h-10 w-10 animate-spin rounded-full border-3 border-olive-200 border-t-olive-600" />
-            <p className="text-sm font-medium text-charcoal-600">장소를 불러오는 중...</p>
+            <p className="text-sm font-medium text-charcoal-600">{UI_COPY[language].loadingPlaces}</p>
           </div>
         </div>
       )}
@@ -393,6 +417,7 @@ export default function App() {
           place={selectedPlace}
           related={relatedPlaces}
           drawerOpen={drawerOpen}
+          language={language}
           onClose={() => setSelectedPlace(null)}
           onPlaceClick={handlePlaceClick}
         />

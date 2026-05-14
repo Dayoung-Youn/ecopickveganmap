@@ -1,16 +1,9 @@
 import { Leaf, Recycle, Coffee, Store, Utensils, ShoppingBag, Map } from 'lucide-react';
+import { UI_COPY, categoryDisplayLabel, normalizeCategoryLabel, type Language } from '../lib/i18n';
 
 /** Match sheet labels with optional spaces (e.g. "비건 옵션") */
 function normCatLabel(s: string): string {
-  return s.trim().replace(/\s+/g, '');
-}
-
-/** Drawer 표시용 (필터 값은 시트의 cat 그대로 유지) */
-export function categoryDisplayLabel(cat: string): string {
-  const n = normCatLabel(cat);
-  if (n === '완전비건') return '완전비건 All Vegan';
-  if (n === '비건옵션') return '비건옵션 Vegan-option';
-  return cat;
+  return normalizeCategoryLabel(s);
 }
 
 function categoryChipClasses(cat: string, isActive: boolean): string {
@@ -44,10 +37,11 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
 interface CategoryFilterProps {
   categories: string[];
   active: string | null;
+  language: Language;
   onSelect: (cat: string | null) => void;
 }
 
-export default function CategoryFilter({ categories, active, onSelect }: CategoryFilterProps) {
+export default function CategoryFilter({ categories, active, language, onSelect }: CategoryFilterProps) {
   return (
     <div className="flex w-full min-h-0 gap-2 overflow-x-auto px-1 py-1 scrollbar-hide sm:flex-col sm:overflow-x-hidden sm:overflow-y-auto">
       <button
@@ -60,7 +54,7 @@ export default function CategoryFilter({ categories, active, onSelect }: Categor
         }`}
       >
         <Map size={14} className="shrink-0" />
-        <span className="leading-snug">전체 All Spots</span>
+        <span className="leading-snug">{UI_COPY[language].allSpots}</span>
       </button>
       {categories.map((cat) => (
         <button
@@ -72,7 +66,7 @@ export default function CategoryFilter({ categories, active, onSelect }: Categor
           <span className="shrink-0 flex items-center justify-center [&>svg]:block">
             {CATEGORY_ICONS[normCatLabel(cat)] ?? CATEGORY_ICONS[cat] ?? <Leaf size={14} />}
           </span>
-          <span className="leading-snug break-keep">{categoryDisplayLabel(cat)}</span>
+          <span className="leading-snug break-keep">{categoryDisplayLabel(cat, language)}</span>
         </button>
       ))}
     </div>
