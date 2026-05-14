@@ -108,15 +108,23 @@ export default function PlacePopup({
 
       {/* Instagram CTA */}
       <div className="px-5 py-4 border-t border-cream-200 flex-shrink-0 bg-cream-50">
-        <a
-          href={place.postUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 w-full rounded-xl bg-gradient-to-r from-olive-600 to-olive-700 px-4 py-3 text-sm font-bold text-white shadow-md hover:shadow-lg hover:from-olive-700 hover:to-olive-800 transition-all duration-200"
-        >
-          <ExternalLink size={16} />
-          Instagram에서 자세히 보기
-        </a>
+        {place.postUrl ? (
+          // 인스타그램 링크가 있는 경우에만 버튼 표시
+          <a
+            href={String(place.postUrl).startsWith('http') ? String(place.postUrl) : `https://${place.postUrl}`}
+            target="_blank" // 새 탭에서 열기
+            rel="noopener noreferrer" // 보안 및 성능용
+            className="flex items-center justify-center gap-2 w-full rounded-xl bg-gradient-to-r from-olive-600 to-olive-700 px-4 py-3 text-sm font-bold text-white shadow-md hover:shadow-lg hover:from-olive-700 hover:to-olive-800 transition-all duration-200"
+          >
+            <ExternalLink size={16} />
+            Instagram에서 자세히 보기
+          </a>
+        ) : (
+          // 링크가 없는 경우 플레이스홀더 또는 버튼 숨김 처리
+          <div className="text-center text-sm text-charcoal-500 py-2 border border-dashed border-cream-300 rounded-xl bg-white">
+            인스타그램 리뷰 링크가 없습니다.
+          </div>
+        )}
       </div>
     </div>
   );
