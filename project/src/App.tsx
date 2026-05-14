@@ -12,7 +12,6 @@ import type { Place } from './lib/types';
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
 const DRAWER_WIDTH_PX = 208; // matches Tailwind sm:w-52
-const MOBILE_DRAWER_HEIGHT_PX = 152; // matches mobile bottom drawer height
 const MOBILE_BREAKPOINT_PX = 640; // Tailwind sm breakpoint
 
 /** 한반도 전체 뷰 (전체 버튼·초기 카메라 고정; 마커로 계산하지 않음) */
@@ -92,10 +91,10 @@ export default function App() {
   const fitPadding = useCallback(() => {
     if (window.innerWidth < MOBILE_BREAKPOINT_PX) {
       return {
-        top: 64,
+        top: drawerOpen ? 176 : 88,
         right: 48,
-        bottom: 64 + (drawerOpen ? MOBILE_DRAWER_HEIGHT_PX : 0),
-        left: 48,
+        bottom: 64,
+        left: 64,
       };
     }
 
@@ -334,31 +333,13 @@ export default function App() {
     <div className="relative w-full h-full bg-cream-50">
       <div ref={mapContainer} className="h-full w-full" />
 
-      <div className="absolute right-14 top-3 z-20 flex items-center gap-1 rounded-xl border border-cream-200/90 bg-white/95 p-1 shadow-md backdrop-blur-sm sm:right-16">
-        <Globe2 size={15} className="ml-1 text-olive-700" />
-        {LANGUAGES.map((item) => (
-          <button
-            key={item.code}
-            type="button"
-            aria-label={`Set language to ${item.label}`}
-            aria-pressed={language === item.code}
-            onClick={() => setLanguage(item.code)}
-            className={`h-7 rounded-lg px-2 text-[11px] font-bold transition-colors ${
-              language === item.code
-                ? 'bg-olive-600 text-white shadow-sm'
-                : 'text-charcoal-600 hover:bg-cream-100'
-            }`}
-          >
-            {item.shortLabel}
-          </button>
-        ))}
-      </div>
-
-      {/* Slide drawer + toggle tab */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-0 sm:inset-x-auto sm:left-0 sm:top-0 sm:h-full sm:w-0">
+      {/* Category drawer + toggle */}
+      <div className="pointer-events-none absolute left-3 top-3 z-50 h-0 w-0 sm:left-0 sm:top-0 sm:h-full">
         <div
-          className={`pointer-events-auto absolute bottom-0 left-0 right-0 flex h-[152px] flex-col rounded-t-2xl border border-cream-200/80 bg-white/90 py-3 shadow-lg backdrop-blur-md transition-transform duration-300 ease-out sm:bottom-auto sm:right-auto sm:top-0 sm:h-full sm:w-52 sm:rounded-r-2xl sm:rounded-t-none ${
-            drawerOpen ? 'translate-y-0 sm:translate-x-0' : 'translate-y-full sm:-translate-x-full sm:translate-y-0'
+          className={`pointer-events-auto absolute left-0 top-0 flex max-h-[calc(100vh-24px)] w-48 flex-col rounded-2xl border border-cream-200/80 bg-white/90 py-3 shadow-lg backdrop-blur-md transition-all duration-300 ease-out sm:h-full sm:max-h-none sm:w-52 sm:rounded-l-none sm:rounded-r-2xl ${
+            drawerOpen
+              ? 'translate-y-0 opacity-100 sm:translate-x-0'
+              : 'pointer-events-none -translate-y-2 opacity-0 sm:pointer-events-auto sm:translate-y-0 sm:-translate-x-full sm:opacity-100'
           }`}
         >
           <div className="flex shrink-0 items-center gap-2 px-3 pb-2">
@@ -378,6 +359,28 @@ export default function App() {
               onSelect={handleCategorySelect}
             />
           </div>
+          <div className="mx-2 mt-2 h-px shrink-0 bg-cream-200" />
+          <div className="flex shrink-0 items-center gap-1 px-3 pt-2">
+            <Globe2 size={14} className="shrink-0 text-olive-700" />
+            <div className="flex min-w-0 flex-1 items-center gap-1">
+              {LANGUAGES.map((item) => (
+                <button
+                  key={item.code}
+                  type="button"
+                  aria-label={`Set language to ${item.label}`}
+                  aria-pressed={language === item.code}
+                  onClick={() => setLanguage(item.code)}
+                  className={`h-7 min-w-0 flex-1 rounded-lg px-1 text-[10px] font-bold transition-colors ${
+                    language === item.code
+                      ? 'bg-olive-600 text-white shadow-sm'
+                      : 'text-charcoal-600 hover:bg-cream-100'
+                  }`}
+                >
+                  {item.shortLabel}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         <button
@@ -385,19 +388,19 @@ export default function App() {
           aria-expanded={drawerOpen}
           aria-label={drawerOpen ? UI_COPY[language].closeDrawer : UI_COPY[language].openDrawer}
           onClick={() => setDrawerOpen((o) => !o)}
-          className={`pointer-events-auto absolute left-1/2 z-[11] flex h-9 w-24 -translate-x-1/2 items-center justify-center rounded-t-xl border border-cream-200/90 bg-white/95 shadow-md backdrop-blur-sm transition-[bottom] duration-300 ease-out hover:bg-white sm:left-auto sm:top-1/2 sm:h-24 sm:w-9 sm:-translate-x-0 sm:-translate-y-1/2 sm:rounded-r-xl sm:rounded-t-none sm:transition-[left] ${
-            drawerOpen ? 'bottom-[152px] sm:left-52' : 'bottom-0 sm:left-0'
+          className={`pointer-events-auto absolute left-0 top-0 z-[11] hidden h-11 w-11 items-center justify-center rounded-xl border border-cream-200/90 bg-white/95 shadow-md backdrop-blur-sm transition-[left] duration-300 ease-out hover:bg-white sm:left-auto sm:top-1/2 sm:flex sm:h-24 sm:w-9 sm:-translate-y-1/2 sm:rounded-l-none sm:rounded-r-xl ${
+            drawerOpen ? 'sm:left-52' : 'sm:left-0'
           }`}
         >
           {drawerOpen ? (
             <>
               <ChevronLeft size={20} className="hidden text-charcoal-600 sm:block" />
-              <ChevronRight size={20} className="rotate-90 text-charcoal-600 sm:hidden" />
+              <Compass size={18} className="text-olive-700 sm:hidden" />
             </>
           ) : (
             <>
               <ChevronRight size={20} className="hidden text-charcoal-600 sm:block" />
-              <ChevronLeft size={20} className="-rotate-90 text-charcoal-600 sm:hidden" />
+              <Compass size={18} className="text-olive-700 sm:hidden" />
             </>
           )}
         </button>
