@@ -43,30 +43,30 @@ interface CategoryFilterProps {
 
 export default function CategoryFilter({ categories, active, language, onSelect }: CategoryFilterProps) {
   return (
-    <div className="flex w-full min-h-0 flex-col gap-2 overflow-y-auto px-1 py-1 scrollbar-hide">
+    <div className="flex w-full min-h-0 flex-col gap-1.5 overflow-y-auto px-1 py-1 scrollbar-hide">
       <button
         type="button"
         onClick={() => onSelect(null)}
-        className={`flex w-full min-w-0 items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-all duration-200 shrink-0 ${
+        className={`flex w-full min-w-0 items-center gap-1.5 rounded-xl px-2.5 py-2 text-left text-[11px] font-semibold transition-all duration-200 shrink-0 sm:gap-2 sm:px-3 sm:py-2.5 sm:text-sm sm:font-medium ${
           active === null
             ? 'bg-olive-600 text-white shadow-md'
             : 'bg-cream-100 text-charcoal-700 hover:bg-cream-200'
         }`}
       >
-        <Map size={14} className="shrink-0" />
-        <span className="leading-snug">{UI_COPY[language].allSpots}</span>
+        <Map size={13} className="shrink-0 sm:size-[14px]" />
+        <span className="min-w-0 truncate whitespace-nowrap leading-snug">{UI_COPY[language].allSpots}</span>
       </button>
       {categories.map((cat) => (
         <button
           type="button"
           key={cat}
           onClick={() => onSelect(cat === active ? null : cat)}
-          className={`flex w-full min-w-0 items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-all duration-200 shrink-0 ${categoryChipClasses(cat, active === cat)}`}
+          className={`flex w-full min-w-0 items-center gap-1.5 rounded-xl px-2.5 py-2 text-left text-[11px] font-semibold transition-all duration-200 shrink-0 sm:gap-2 sm:px-3 sm:py-2.5 sm:text-sm sm:font-medium ${categoryChipClasses(cat, active === cat)}`}
         >
           <span className="shrink-0 flex items-center justify-center [&>svg]:block">
             {CATEGORY_ICONS[normCatLabel(cat)] ?? CATEGORY_ICONS[cat] ?? <Leaf size={14} />}
           </span>
-          <span className="leading-snug break-keep">{categoryDisplayLabel(cat, language)}</span>
+          <span className="min-w-0 truncate whitespace-nowrap leading-snug">{categoryDisplayLabel(cat, language)}</span>
         </button>
       ))}
     </div>

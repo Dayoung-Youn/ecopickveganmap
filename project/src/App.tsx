@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import './App.css';
-import { ChevronLeft, ChevronRight, Compass, Globe2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Compass, Globe2, Instagram } from 'lucide-react';
 import CategoryFilter from './components/CategoryFilter';
 import PlacePopup from './components/PlacePopup';
 import { fetchPlaces } from './lib/fetchPlaces';
@@ -91,10 +91,10 @@ export default function App() {
   const fitPadding = useCallback(() => {
     if (window.innerWidth < MOBILE_BREAKPOINT_PX) {
       return {
-        top: drawerOpen ? 176 : 88,
+        top: drawerOpen ? 204 : 88,
         right: 48,
-        bottom: 64,
-        left: 64,
+        bottom: 56,
+        left: drawerOpen ? 232 : 64,
       };
     }
 
@@ -108,15 +108,15 @@ export default function App() {
       if (!m) return;
 
       const isMobile = window.innerWidth < MOBILE_BREAKPOINT_PX;
-      const targetZoom = isMobile ? 11.4 : 12.2;
+      const targetZoom = isMobile ? 9.8 : 12.2;
       const currentZoom = m.getZoom();
       const offset: [number, number] = isMobile
-        ? [0, -Math.min(window.innerHeight * 0.22, 190)]
+        ? [0, -Math.min(window.innerHeight * 0.34, 270)]
         : [drawerOpen ? 260 : 210, 0];
 
       m.flyTo({
         center: [place.lng, place.lat],
-        zoom: currentZoom > targetZoom ? targetZoom : Math.max(currentZoom, targetZoom),
+        zoom: isMobile ? targetZoom : currentZoom > targetZoom ? targetZoom : Math.max(currentZoom, targetZoom),
         offset,
         speed: 1.1,
         curve: 1.25,
@@ -336,7 +336,7 @@ export default function App() {
       {/* Category drawer + toggle */}
       <div className="pointer-events-none absolute left-3 top-3 z-50 h-0 w-0 sm:left-0 sm:top-0 sm:h-full">
         <div
-          className={`pointer-events-auto absolute left-0 top-0 flex max-h-[calc(100vh-24px)] w-48 flex-col rounded-2xl border border-cream-200/80 bg-white/90 py-3 shadow-lg backdrop-blur-md transition-all duration-300 ease-out sm:h-full sm:max-h-none sm:w-52 sm:rounded-l-none sm:rounded-r-2xl ${
+          className={`pointer-events-auto absolute left-0 top-0 flex max-h-[calc(100vh-24px)] w-56 flex-col rounded-2xl border border-cream-200/80 bg-white/90 py-3 shadow-lg backdrop-blur-md transition-all duration-300 ease-out sm:h-full sm:max-h-none sm:w-52 sm:rounded-l-none sm:rounded-r-2xl ${
             drawerOpen
               ? 'translate-y-0 opacity-100 sm:translate-x-0'
               : 'pointer-events-none -translate-y-2 opacity-0 sm:pointer-events-auto sm:translate-y-0 sm:-translate-x-full sm:opacity-100'
@@ -346,8 +346,12 @@ export default function App() {
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-olive-600">
               <Compass size={15} className="text-white" />
             </div>
-            <span className="text-xs font-bold leading-snug tracking-tight text-charcoal-800">
-              Veganmap @ecopick.mag
+            <span className="text-xs font-bold leading-tight tracking-tight text-charcoal-800">
+              VeganMap
+              <span className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold text-charcoal-600">
+                <Instagram size={11} />
+                @ecopick.mag
+              </span>
             </span>
           </div>
           <div className="mx-2 h-px shrink-0 bg-cream-200" />
