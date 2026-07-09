@@ -27,7 +27,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   비건: '#7c8c5a',
   완전비건: '#5a6a42',
   비건옵션: '#9fb88a',
-  제로웨이스트: '#a3b18a',
+  제로웨이스트: '#BDCEBE',
   카페: '#c9a96e',
   식당: '#d4a373',
   샵: '#b5838d',
@@ -41,6 +41,10 @@ function normalizeCategoryLabel(s: string): string {
 
 function categoryMatches(placeCategory: string, active: string): boolean {
   return normalizeCategoryLabel(placeCategory) === normalizeCategoryLabel(active);
+}
+
+function samePlace(a: Place, b: Place): boolean {
+  return a.name === b.name && a.postUrl === b.postUrl && a.lat === b.lat && a.lng === b.lng;
 }
 
 function colorForCategory(raw: string): string {
@@ -89,18 +93,21 @@ export default function App() {
   const [language, setLanguage] = useState<Language>('en');
 
   const fitPadding = useCallback(() => {
-    if (window.innerWidth < MOBILE_BREAKPOINT_PX) {
+    const isMobile = window.innerWidth < MOBILE_BREAKPOINT_PX;
+    const popupBottom = isMobile && selectedPlace ? Math.round(window.innerHeight * 0.52) : isMobile ? 56 : 80;
+
+    if (isMobile) {
       return {
         top: drawerOpen ? 204 : 88,
-        right: 48,
-        bottom: 56,
+        right: 168,
+        bottom: popupBottom,
         left: drawerOpen ? 232 : 64,
       };
     }
 
     const left = 80 + (drawerOpen ? DRAWER_WIDTH_PX : 0);
-    return { top: 80, right: 80, bottom: 80, left };
-  }, [drawerOpen]);
+    return { top: 80, right: 180, bottom: 80, left };
+  }, [drawerOpen, selectedPlace]);
 
   const focusPlaceOnMap = useCallback(
     (place: Place) => {
@@ -108,23 +115,29 @@ export default function App() {
       if (!m) return;
 
       const isMobile = window.innerWidth < MOBILE_BREAKPOINT_PX;
-      const targetZoom = isMobile ? 9.8 : 12.2;
+      const targetZoom = isMobile ? 15 : 15.4;
       const currentZoom = m.getZoom();
       const offset: [number, number] = isMobile
-        ? [0, -Math.min(window.innerHeight * 0.34, 270)]
-        : [drawerOpen ? 260 : 210, 0];
+        ? [0, -Math.min(window.innerHeight * 0.24, 190)]
+        : [drawerOpen ? 180 : 80, 0];
 
       m.flyTo({
         center: [place.lng, place.lat],
         zoom: isMobile ? targetZoom : currentZoom > targetZoom ? targetZoom : Math.max(currentZoom, targetZoom),
         offset,
-        speed: 1.1,
-        curve: 1.25,
+        speed: 1.95,
+        curve: 1.2,
         essential: true,
       });
     },
     [drawerOpen],
   );
+
+  useEffect(() => {
+    if (!selectedPlace) return;
+    const id = window.setTimeout(() => focusPlaceOnMap(selectedPlace), 0);
+    return () => window.clearTimeout(id);
+  }, [focusPlaceOnMap, selectedPlace]);
 
   // Initialize map
   useEffect(() => {
@@ -242,6 +255,12 @@ export default function App() {
     [places, activeCategory],
   );
 
+  const placesForMarkers = useMemo(() => {
+    if (!selectedPlace) return filtered;
+    if (filtered.some((p) => samePlace(p, selectedPlace))) return filtered;
+    return [...filtered, selectedPlace];
+  }, [filtered, selectedPlace]);
+
   const relatedPlaces = useMemo(() => {
     if (!selectedPlace || !selectedPlace.postUrl) return [];
 
@@ -265,6 +284,7 @@ export default function App() {
   
   const handleCategorySelect = useCallback(
     (cat: string | null) => {
+      setSelectedPlace(null);
       setActiveCategory(cat);
       if (cat !== null) return;
 
@@ -290,9 +310,9 @@ export default function App() {
     Object.values(markersRef.current).forEach((marker) => marker.remove());
     markersRef.current = {};
 
-    filtered.forEach((place, index) => {
+    placesForMarkers.forEach((place, index) => {
       const color = colorForCategory(place.category);
-      const isSelected = selectedPlace?.name === place.name;
+      const isSelected = selectedPlace !== null && samePlace(place, selectedPlace);
       /** Mapbox positions this node only — no custom transform/size on it (see App.css) */
       const root = document.createElement('div');
       root.className =
@@ -311,8 +331,11 @@ export default function App() {
 
       inner.addEventListener('click', (e) => {
         e.stopPropagation();
+        if (selectedPlace && samePlace(place, selectedPlace)) {
+          focusPlaceOnMap(place);
+          return;
+        }
         setSelectedPlace(place);
-        focusPlaceOnMap(place);
       });
 
       const marker = new mapboxgl.Marker({ element: root, anchor: 'bottom' })
@@ -322,12 +345,15 @@ export default function App() {
       const markerKey = `${place.postUrl}::${place.name}::${index}`;
       markersRef.current[markerKey] = marker;
     });
-  }, [filtered, focusPlaceOnMap, selectedPlace]);
+  }, [placesForMarkers, focusPlaceOnMap, selectedPlace]);
 
   const handlePlaceClick = useCallback((place: Place) => {
+    if (selectedPlace && samePlace(place, selectedPlace)) {
+      focusPlaceOnMap(place);
+      return;
+    }
     setSelectedPlace(place);
-    focusPlaceOnMap(place);
-  }, [focusPlaceOnMap]);
+  }, [focusPlaceOnMap, selectedPlace]);
 
   return (
     <div className="relative w-full h-full bg-cream-50">
@@ -355,34 +381,27 @@ export default function App() {
             </span>
           </div>
           <div className="mx-2 h-px shrink-0 bg-cream-200" />
-          <div className="min-h-0 flex-1 overflow-hidden pt-2">
-            <CategoryFilter
-              categories={categories}
-              active={activeCategory}
-              language={language}
-              onSelect={handleCategorySelect}
-            />
-          </div>
-          <div className="mx-2 mt-2 h-px shrink-0 bg-cream-200" />
-          <div className="flex shrink-0 items-center gap-1 px-3 pt-2">
-            <Globe2 size={14} className="shrink-0 text-olive-700" />
-            <div className="flex min-w-0 flex-1 items-center gap-1">
-              {LANGUAGES.map((item) => (
-                <button
-                  key={item.code}
-                  type="button"
-                  aria-label={`Set language to ${item.label}`}
-                  aria-pressed={language === item.code}
-                  onClick={() => setLanguage(item.code)}
-                  className={`h-7 min-w-0 flex-1 rounded-lg px-1 text-[10px] font-bold transition-colors ${
-                    language === item.code
-                      ? 'bg-olive-600 text-white shadow-sm'
-                      : 'text-charcoal-600 hover:bg-cream-100'
-                  }`}
-                >
-                  {item.shortLabel}
-                </button>
-              ))}
+          <div className="mt-auto shrink-0 pt-2">
+            <div className="flex shrink-0 items-center gap-1 px-3 pb-1">
+              <Globe2 size={14} className="shrink-0 text-olive-700" />
+              <div className="flex min-w-0 flex-1 items-center gap-1">
+                {LANGUAGES.map((item) => (
+                  <button
+                    key={item.code}
+                    type="button"
+                    aria-label={`Set language to ${item.label}`}
+                    aria-pressed={language === item.code}
+                    onClick={() => setLanguage(item.code)}
+                    className={`h-7 min-w-0 flex-1 rounded-lg px-1 text-[10px] font-bold transition-colors ${
+                      language === item.code
+                        ? 'bg-olive-600 text-white shadow-sm'
+                        : 'text-charcoal-600 hover:bg-cream-100'
+                    }`}
+                  >
+                    {item.shortLabel}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -408,6 +427,16 @@ export default function App() {
             </>
           )}
         </button>
+      </div>
+
+      {/* Category filters — individual buttons below Mapbox nav compass (top-right) */}
+      <div className="pointer-events-none absolute right-2 top-[6.75rem] z-40 sm:right-3">
+          <CategoryFilter
+            categories={categories}
+            highlighted={activeCategory}
+            language={language}
+            onSelect={handleCategorySelect}
+          />
       </div>
 
       {loading && (
