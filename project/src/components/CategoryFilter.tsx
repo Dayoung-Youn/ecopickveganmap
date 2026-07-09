@@ -1,80 +1,127 @@
-import { Leaf, Recycle, Coffee, Store, Utensils, ShoppingBag, Map } from 'lucide-react';
+import { Leaf, Recycle, CheckSquare, Map } from 'lucide-react';
+import { UI_COPY, categoryDisplayLabel, normalizeCategoryLabel, type Language } from '../lib/i18n';
 
-/** Match sheet labels with optional spaces (e.g. "비건 옵션") */
+/** Fixed filters below the map compass: 전체 + 3 categories */
+export const FILTER_CATEGORY_KEYS = ['완전비건', '비건옵션', '제로웨이스트'] as const;
+
+const BUTTON_BASE =
+  'flex w-full min-w-[9.5rem] items-center gap-2 rounded-xl border border-cream-200/90 bg-white/95 px-2.5 py-2 text-left text-[11px] font-semibold shadow-md backdrop-blur-sm transition-all duration-200 sm:min-w-[10.5rem] sm:px-3 sm:py-2.5 sm:text-xs sm:font-medium';
+
+const CATEGORY_ACTIVE_COLORS: Record<string, string> = {
+  전체: '#616e45',
+  완전비건: '#5a6a42',
+  비건옵션: '#9fb88a',
+  제로웨이스트: '#BDCEBE',
+};
+
 function normCatLabel(s: string): string {
-  return s.trim().replace(/\s+/g, '');
+  return normalizeCategoryLabel(s);
 }
 
-/** Drawer 표시용 (필터 값은 시트의 cat 그대로 유지) */
-export function categoryDisplayLabel(cat: string): string {
-  const n = normCatLabel(cat);
-  if (n === '완전비건') return '완전비건 All Vegan';
-  if (n === '비건옵션') return '비건옵션 Vegan-option';
-  return cat;
-}
-
-function categoryChipClasses(cat: string, isActive: boolean): string {
+function categoryChipClasses(cat: string, isHighlighted: boolean): string {
   const n = normCatLabel(cat);
   if (n === '완전비건') {
-    return isActive
-      ? 'bg-olive-600 text-white shadow-md'
-      : 'bg-olive-200 text-olive-900 hover:bg-olive-300';
+    return isHighlighted
+      ? 'text-white shadow-md'
+      : 'text-olive-900 hover:border-olive-300 hover:bg-olive-100';
   }
   if (n === '비건옵션') {
-    return isActive
-      ? 'bg-olive-400 text-white shadow-md'
-      : 'bg-olive-50 text-olive-700 border border-olive-200/70 hover:bg-olive-100';
+    return isHighlighted
+      ? 'text-white shadow-md'
+      : 'text-olive-700 hover:border-olive-300 hover:bg-olive-50';
   }
-  return isActive
-    ? 'bg-olive-600 text-white shadow-md'
-    : 'bg-cream-100 text-charcoal-700 hover:bg-cream-200';
+  if (n === '제로웨이스트') {
+    return isHighlighted
+      ? 'text-white shadow-md'
+      : 'text-charcoal-700 hover:border-olive-300 hover:bg-cream-100';
+  }
+  return isHighlighted
+    ? 'text-white shadow-md'
+    : 'text-charcoal-700 hover:border-olive-300 hover:bg-cream-100';
+}
+
+function activeColorForCategory(cat: string | null): string {
+  if (cat === null) return CATEGORY_ACTIVE_COLORS['전체'];
+  const normalized = normCatLabel(cat);
+  return CATEGORY_ACTIVE_COLORS[normalized] ?? CATEGORY_ACTIVE_COLORS['전체'];
 }
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
-  비건: <Leaf size={14} />,
+  전체: <Map size={14} />,
   완전비건: <Leaf size={14} />,
-  비건옵션: <Leaf size={14} />,
+  비건옵션: <CheckSquare size={14} />,
   제로웨이스트: <Recycle size={14} />,
-  카페: <Coffee size={14} />,
-  식당: <Utensils size={14} />,
-  샵: <ShoppingBag size={14} />,
-  스토어: <Store size={14} />,
 };
+
+function resolveCategoryLabel(categories: string[], key: string): string {
+  const normalized = normalizeCategoryLabel(key);
+  return categories.find((c) => normalizeCategoryLabel(c) === normalized) ?? key;
+}
 
 interface CategoryFilterProps {
   categories: string[];
-  active: string | null;
+  highlighted: string | null;
+  language: Language;
   onSelect: (cat: string | null) => void;
 }
 
-export default function CategoryFilter({ categories, active, onSelect }: CategoryFilterProps) {
+export default function CategoryFilter({ categories, highlighted, language, onSelect }: CategoryFilterProps) {
   return (
-    <div className="flex flex-col gap-2 w-full min-h-0 px-1 py-1 scrollbar-hide overflow-y-auto">
+    <div className="pointer-events-auto flex flex-col gap-2">
       <button
         type="button"
         onClick={() => onSelect(null)}
-        className={`flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-all duration-200 shrink-0 ${
-          active === null
-            ? 'bg-olive-600 text-white shadow-md'
-            : 'bg-cream-100 text-charcoal-700 hover:bg-cream-200'
+        className={`${BUTTON_BASE} ${
+          highlighted === null
+            ? 'text-white shadow-md'
+            : 'text-charcoal-700 hover:border-olive-300 hover:bg-cream-100'
         }`}
+        style={
+          highlighted === null
+            ? { backgroundColor: activeColorForCategory(null), borderColor: activeColorForCategory(null) }
+            : undefined
+        }
       >
-        <Map size={14} className="shrink-0" />
-        <span className="leading-snug">전체 All Spots</span>
+        <span className="flex shrink-0 items-center justify-center [&>svg]:block">{CATEGORY_ICONS['전체']}</span>
+        <span className="min-w-0 truncate leading-snug">{UI_COPY[language].allSpots}</span>
       </button>
-      {categories.map((cat) => (
-        <button
-          type="button"
-          key={cat}
-          onClick={() => onSelect(cat === active ? null : cat)}
-          className={`flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-all duration-200 shrink-0 ${categoryChipClasses(cat, active === cat)}`}
-        >
-          <span className="shrink-0 flex items-center justify-center [&>svg]:block">
-            {CATEGORY_ICONS[normCatLabel(cat)] ?? CATEGORY_ICONS[cat] ?? <Leaf size={14} />}
-          </span>
-          <span className="leading-snug break-keep">{categoryDisplayLabel(cat)}</span>
-        </button>
-      ))}
+      {FILTER_CATEGORY_KEYS.map((key) => {
+        const cat = resolveCategoryLabel(categories, key);
+        const isHighlighted = highlighted !== null && normCatLabel(highlighted) === normCatLabel(cat);
+        return (
+          <button
+            type="button"
+            key={key}
+            onClick={() => onSelect(isHighlighted ? null : cat)}
+            className={`${BUTTON_BASE} ${categoryChipClasses(cat, isHighlighted)}`}
+            style={
+              isHighlighted
+                ? { backgroundColor: activeColorForCategory(cat), borderColor: activeColorForCategory(cat) }
+                : undefined
+            }
+          >
+            <span className="flex shrink-0 items-center justify-center [&>svg]:block">
+              {CATEGORY_ICONS[key] ?? <Leaf size={14} />}
+            </span>
+            <span className="min-w-0 truncate leading-snug">{categoryDisplayLabel(cat, language)}</span>
+          </button>
+        );
+      })}
     </div>
   );
+}
+
+export function resolveHighlightedCategory(
+  categories: string[],
+  selectedPlaceCategory: string | null | undefined,
+  activeCategory: string | null,
+): string | null {
+  if (selectedPlaceCategory) {
+    for (const key of FILTER_CATEGORY_KEYS) {
+      if (normCatLabel(selectedPlaceCategory) === normCatLabel(key)) {
+        return resolveCategoryLabel(categories, key);
+      }
+    }
+  }
+  return activeCategory;
 }

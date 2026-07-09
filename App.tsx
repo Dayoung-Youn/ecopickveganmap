@@ -2,17 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import './App.css';
-import { ChevronLeft, ChevronRight, Compass, Globe2, Instagram } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Compass } from 'lucide-react';
 import CategoryFilter from './components/CategoryFilter';
 import PlacePopup from './components/PlacePopup';
 import { fetchPlaces } from './lib/fetchPlaces';
-import { LANGUAGES, UI_COPY, type Language } from './lib/i18n';
 import type { Place } from './lib/types';
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
-const DRAWER_WIDTH_PX = 208; // matches Tailwind sm:w-52
-const MOBILE_BREAKPOINT_PX = 640; // Tailwind sm breakpoint
+const DRAWER_WIDTH_PX = 208; // matches Tailwind w-52
 
 /** 한반도 전체 뷰 (전체 버튼·초기 카메라 고정; 마커로 계산하지 않음) */
 const KOREA_PENINSULA_BOUNDS = new mapboxgl.LngLatBounds([124.0, 33.0], [132.0, 43.0]);
@@ -27,7 +25,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   비건: '#7c8c5a',
   완전비건: '#5a6a42',
   비건옵션: '#9fb88a',
-  제로웨이스트: '#BDCEBE',
+  제로웨이스트: '#a3b18a',
   카페: '#c9a96e',
   식당: '#d4a373',
   샵: '#b5838d',
@@ -41,10 +39,6 @@ function normalizeCategoryLabel(s: string): string {
 
 function categoryMatches(placeCategory: string, active: string): boolean {
   return normalizeCategoryLabel(placeCategory) === normalizeCategoryLabel(active);
-}
-
-function samePlace(a: Place, b: Place): boolean {
-  return a.name === b.name && a.postUrl === b.postUrl && a.lat === b.lat && a.lng === b.lng;
 }
 
 function colorForCategory(raw: string): string {
@@ -90,54 +84,11 @@ export default function App() {
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(true);
-  const [language, setLanguage] = useState<Language>('en');
 
   const fitPadding = useCallback(() => {
-    const isMobile = window.innerWidth < MOBILE_BREAKPOINT_PX;
-    const popupBottom = isMobile && selectedPlace ? Math.round(window.innerHeight * 0.52) : isMobile ? 56 : 80;
-
-    if (isMobile) {
-      return {
-        top: drawerOpen ? 204 : 88,
-        right: 168,
-        bottom: popupBottom,
-        left: drawerOpen ? 232 : 64,
-      };
-    }
-
     const left = 80 + (drawerOpen ? DRAWER_WIDTH_PX : 0);
-    return { top: 80, right: 180, bottom: 80, left };
-  }, [drawerOpen, selectedPlace]);
-
-  const focusPlaceOnMap = useCallback(
-    (place: Place) => {
-      const m = map.current;
-      if (!m) return;
-
-      const isMobile = window.innerWidth < MOBILE_BREAKPOINT_PX;
-      const targetZoom = isMobile ? 15 : 15.4;
-      const currentZoom = m.getZoom();
-      const offset: [number, number] = isMobile
-        ? [0, -Math.min(window.innerHeight * 0.24, 190)]
-        : [drawerOpen ? 180 : 80, 0];
-
-      m.flyTo({
-        center: [place.lng, place.lat],
-        zoom: isMobile ? targetZoom : currentZoom > targetZoom ? targetZoom : Math.max(currentZoom, targetZoom),
-        offset,
-        speed: 1.95,
-        curve: 1.2,
-        essential: true,
-      });
-    },
-    [drawerOpen],
-  );
-
-  useEffect(() => {
-    if (!selectedPlace) return;
-    const id = window.setTimeout(() => focusPlaceOnMap(selectedPlace), 0);
-    return () => window.clearTimeout(id);
-  }, [focusPlaceOnMap, selectedPlace]);
+    return { top: 80, right: 80, bottom: 80, left };
+  }, [drawerOpen]);
 
   // Initialize map
   useEffect(() => {
@@ -255,36 +206,13 @@ export default function App() {
     [places, activeCategory],
   );
 
-  const placesForMarkers = useMemo(() => {
-    if (!selectedPlace) return filtered;
-    if (filtered.some((p) => samePlace(p, selectedPlace))) return filtered;
-    return [...filtered, selectedPlace];
-  }, [filtered, selectedPlace]);
-
   const relatedPlaces = useMemo(() => {
-    if (!selectedPlace || !selectedPlace.postUrl) return [];
-
-    const getPostId = (url: string) => {
-      const str = String(url).trim();
-      if (!str.includes('/p/')) return str; // 일반 링크면 전체 주소 사용
-      return str.split('/p/')[1].split(/[/?]/)[0];
-    };
-
-    const targetId = getPostId(selectedPlace.postUrl);
-    if (!targetId) return [];
-
-    return places.filter((p) => {
-      if (!p.postUrl) return false;
-      
-      const compareId = getPostId(p.postUrl);
-      
-      return compareId === targetId && p.name !== selectedPlace.name;
-    });
+    if (!selectedPlace) return [];
+    return places.filter((p) => p.postUrl === selectedPlace.postUrl);
   }, [places, selectedPlace]);
-  
+
   const handleCategorySelect = useCallback(
     (cat: string | null) => {
-      setSelectedPlace(null);
       setActiveCategory(cat);
       if (cat !== null) return;
 
@@ -310,19 +238,18 @@ export default function App() {
     Object.values(markersRef.current).forEach((marker) => marker.remove());
     markersRef.current = {};
 
-    placesForMarkers.forEach((place, index) => {
+    filtered.forEach((place, index) => {
       const color = colorForCategory(place.category);
-      const isSelected = selectedPlace !== null && samePlace(place, selectedPlace);
       /** Mapbox positions this node only — no custom transform/size on it (see App.css) */
       const root = document.createElement('div');
       root.className =
-        isSelected
+        selectedPlace?.name === place.name
           ? 'mapbox-marker-root mapbox-marker-root--selected'
           : 'mapbox-marker-root';
 
       const inner = document.createElement('div');
       inner.className = 'custom-teardrop-marker';
-      inner.style.backgroundColor = isSelected ? '#f7f5ee' : color;
+      inner.style.backgroundColor = color;
 
       const hole = document.createElement('div');
       hole.className = 'custom-teardrop-marker__hole';
@@ -331,10 +258,6 @@ export default function App() {
 
       inner.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (selectedPlace && samePlace(place, selectedPlace)) {
-          focusPlaceOnMap(place);
-          return;
-        }
         setSelectedPlace(place);
       });
 
@@ -345,105 +268,66 @@ export default function App() {
       const markerKey = `${place.postUrl}::${place.name}::${index}`;
       markersRef.current[markerKey] = marker;
     });
-  }, [placesForMarkers, focusPlaceOnMap, selectedPlace]);
+  }, [filtered, selectedPlace]);
 
   const handlePlaceClick = useCallback((place: Place) => {
-    if (selectedPlace && samePlace(place, selectedPlace)) {
-      focusPlaceOnMap(place);
-      return;
-    }
     setSelectedPlace(place);
-  }, [focusPlaceOnMap, selectedPlace]);
+    if (map.current) {
+      map.current.flyTo({ center: [place.lng, place.lat], zoom: 13, speed: 1.2 });
+    }
+  }, []);
 
   return (
     <div className="relative w-full h-full bg-cream-50">
       <div ref={mapContainer} className="h-full w-full" />
 
-      {/* Category drawer + toggle */}
-      <div className="pointer-events-none absolute left-3 top-3 z-50 h-0 w-0 sm:left-0 sm:top-0 sm:h-full">
+      {/* Slide drawer + toggle tab */}
+      <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-0">
         <div
-          className={`pointer-events-auto absolute left-0 top-0 flex max-h-[calc(100vh-24px)] w-56 flex-col rounded-2xl border border-cream-200/80 bg-white/90 py-3 shadow-lg backdrop-blur-md transition-all duration-300 ease-out sm:h-full sm:max-h-none sm:w-52 sm:rounded-l-none sm:rounded-r-2xl ${
-            drawerOpen
-              ? 'translate-y-0 opacity-100 sm:translate-x-0'
-              : 'pointer-events-none -translate-y-2 opacity-0 sm:pointer-events-auto sm:translate-y-0 sm:-translate-x-full sm:opacity-100'
+          className={`pointer-events-auto absolute left-0 top-0 flex h-full w-52 flex-col rounded-r-2xl border border-cream-200/80 bg-white/90 py-3 shadow-lg backdrop-blur-md transition-transform duration-300 ease-out ${
+            drawerOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
           <div className="flex shrink-0 items-center gap-2 px-3 pb-2">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-olive-600">
               <Compass size={15} className="text-white" />
             </div>
-            <span className="text-xs font-bold leading-tight tracking-tight text-charcoal-800">
-              VeganMap
-              <span className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold text-charcoal-600">
-                <Instagram size={11} />
-                @ecopick.mag
-              </span>
+            <span className="text-xs font-bold leading-snug tracking-tight text-charcoal-800">
+              Veganmap @ecopick.mag
             </span>
           </div>
           <div className="mx-2 h-px shrink-0 bg-cream-200" />
-          <div className="mt-auto shrink-0 pt-2">
-            <div className="flex shrink-0 items-center gap-1 px-3 pb-1">
-              <Globe2 size={14} className="shrink-0 text-olive-700" />
-              <div className="flex min-w-0 flex-1 items-center gap-1">
-                {LANGUAGES.map((item) => (
-                  <button
-                    key={item.code}
-                    type="button"
-                    aria-label={`Set language to ${item.label}`}
-                    aria-pressed={language === item.code}
-                    onClick={() => setLanguage(item.code)}
-                    className={`h-7 min-w-0 flex-1 rounded-lg px-1 text-[10px] font-bold transition-colors ${
-                      language === item.code
-                        ? 'bg-olive-600 text-white shadow-sm'
-                        : 'text-charcoal-600 hover:bg-cream-100'
-                    }`}
-                  >
-                    {item.shortLabel}
-                  </button>
-                ))}
-              </div>
-            </div>
+          <div className="min-h-0 flex-1 overflow-hidden pt-2">
+            <CategoryFilter
+              categories={categories}
+              active={activeCategory}
+              onSelect={handleCategorySelect}
+            />
           </div>
         </div>
 
         <button
           type="button"
           aria-expanded={drawerOpen}
-          aria-label={drawerOpen ? UI_COPY[language].closeDrawer : UI_COPY[language].openDrawer}
+          aria-label={drawerOpen ? '카테고리 서랍 접기' : '카테고리 서랍 펼치기'}
           onClick={() => setDrawerOpen((o) => !o)}
-          className={`pointer-events-auto absolute left-0 top-0 z-[11] hidden h-11 w-11 items-center justify-center rounded-xl border border-cream-200/90 bg-white/95 shadow-md backdrop-blur-sm transition-[left] duration-300 ease-out hover:bg-white sm:left-auto sm:top-1/2 sm:flex sm:h-24 sm:w-9 sm:-translate-y-1/2 sm:rounded-l-none sm:rounded-r-xl ${
-            drawerOpen ? 'sm:left-52' : 'sm:left-0'
+          className={`pointer-events-auto absolute top-1/2 z-[11] flex h-24 w-9 -translate-y-1/2 items-center justify-center rounded-r-xl border border-cream-200/90 bg-white/95 shadow-md backdrop-blur-sm transition-[left] duration-300 ease-out hover:bg-white ${
+            drawerOpen ? 'left-52' : 'left-0'
           }`}
         >
           {drawerOpen ? (
-            <>
-              <ChevronLeft size={20} className="hidden text-charcoal-600 sm:block" />
-              <Compass size={18} className="text-olive-700 sm:hidden" />
-            </>
+            <ChevronLeft size={20} className="text-charcoal-600" />
           ) : (
-            <>
-              <ChevronRight size={20} className="hidden text-charcoal-600 sm:block" />
-              <Compass size={18} className="text-olive-700 sm:hidden" />
-            </>
+            <ChevronRight size={20} className="text-charcoal-600" />
           )}
         </button>
-      </div>
-
-      {/* Category filters — individual buttons below Mapbox nav compass (top-right) */}
-      <div className="pointer-events-none absolute right-2 top-[6.75rem] z-40 sm:right-3">
-          <CategoryFilter
-            categories={categories}
-            highlighted={activeCategory}
-            language={language}
-            onSelect={handleCategorySelect}
-          />
       </div>
 
       {loading && (
         <div className="absolute inset-0 z-30 flex items-center justify-center bg-cream-50/80 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-3">
             <div className="h-10 w-10 animate-spin rounded-full border-3 border-olive-200 border-t-olive-600" />
-            <p className="text-sm font-medium text-charcoal-600">{UI_COPY[language].loadingPlaces}</p>
+            <p className="text-sm font-medium text-charcoal-600">장소를 불러오는 중...</p>
           </div>
         </div>
       )}
@@ -453,7 +337,6 @@ export default function App() {
           place={selectedPlace}
           related={relatedPlaces}
           drawerOpen={drawerOpen}
-          language={language}
           onClose={() => setSelectedPlace(null)}
           onPlaceClick={handlePlaceClick}
         />

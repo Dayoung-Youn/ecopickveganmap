@@ -7,7 +7,7 @@
 }
 
 .mapbox-marker-root--selected {
-  z-index: 1000;
+  z-index: 30;
 }
 
 /* Teardrop visuals live only on this inner shell */
@@ -36,9 +36,11 @@
 }
 
 .mapbox-marker-root--selected .custom-teardrop-marker {
-  width: 34px;
-  height: 34px;
-  margin-left: -17px;
+  width: 42px;
+  height: 42px;
+  margin-left: -21px;
+  border: 3px solid #2c2a28;
+  filter: drop-shadow(0 7px 12px rgba(0, 0, 0, 0.44));
 }
 
 .custom-teardrop-marker__hole {
@@ -51,6 +53,31 @@
 }
 
 .mapbox-marker-root--selected .custom-teardrop-marker__hole {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
+  background: #2c2a28;
+}
+
+@media (max-width: 639px) {
+  .custom-teardrop-marker {
+    width: 26px;
+    height: 26px;
+    margin-left: -13px;
+  }
+
+  .custom-teardrop-marker__hole {
+    width: 8px;
+    height: 8px;
+  }
+
+  .mapbox-marker-root--selected .custom-teardrop-marker {
+    width: 36px;
+    height: 36px;
+    margin-left: -18px;
+  }
+
+  .mapbox-marker-root--selected .custom-teardrop-marker__hole {
+    width: 11px;
+    height: 11px;
+  }
 }

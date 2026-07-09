@@ -22,7 +22,7 @@ export async function fetchPlaces(): Promise<Place[]> {
 
   return data
     .map((row) => ({
-      postUrl: row['게시물 URL (Key)'] ?? '',
+      postUrl: row['게시물 인스타그램 URL (Key)'] ?? '',
       name: row['장소명'] ?? '',
       address: row['주소'] ?? '',
       lat: parseCoordinate(row['위도']),
