@@ -8,6 +8,7 @@ import PlacePopup from './components/PlacePopup';
 import { fetchPlaces } from './lib/fetchPlaces';
 import { LANGUAGES, UI_COPY, type Language } from './lib/i18n';
 import type { Place } from './lib/types';
+import { Analytics } from '@vercel/analytics/react';
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -458,6 +459,7 @@ export default function App() {
           onPlaceClick={handlePlaceClick}
         />
       )}
+      <Analytics />
     </div>
   );
 }
