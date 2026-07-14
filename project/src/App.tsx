@@ -16,6 +16,13 @@ const MOBILE_BREAKPOINT_PX = 640; // Tailwind sm breakpoint
 
 /** 한반도 전체 뷰 (전체 버튼·초기 카메라 고정; 마커로 계산하지 않음) */
 const KOREA_PENINSULA_BOUNDS = new mapboxgl.LngLatBounds([124.0, 33.0], [132.0, 43.0]);
+/** 모바일 한반도 뷰 — fitBounds 대신 고정 center/zoom (UI 패딩으로 과도한 줌아웃 방지) */
+const KOREA_PENINSULA_CENTER: [number, number] = [127.6, 36.0];
+const MOBILE_PENINSULA_ZOOM = 6.15;
+
+function isMobileViewport(): boolean {
+  return window.innerWidth < MOBILE_BREAKPOINT_PX;
+}
 
 /** 사용자가 지도를 벗어나지 못하게 하는 허용 범위 */
 const MAP_MAX_BOUNDS: mapboxgl.LngLatBoundsLike = [
@@ -78,6 +85,40 @@ function fitBoundsThenResizeWhenStill(
   window.setTimeout(finish, ms + 150);
 }
 
+/** 초기 화면·'전체' 버튼 공통: 데스크탑은 bounds fit, 모바일은 한반도 고정 줌 */
+function resetToKoreaPeninsulaView(
+  mapInstance: mapboxgl.Map,
+  padding: mapboxgl.PaddingOptions,
+): void {
+  if (isMobileViewport()) {
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      mapInstance.off('moveend', onMoveEnd);
+      mapInstance.resize();
+      requestAnimationFrame(() => mapInstance.resize());
+    };
+    const onMoveEnd = () => finish();
+    mapInstance.on('moveend', onMoveEnd);
+    mapInstance.flyTo({
+      center: KOREA_PENINSULA_CENTER,
+      zoom: MOBILE_PENINSULA_ZOOM,
+      padding,
+      duration: 1000,
+      essential: true,
+    });
+    window.setTimeout(finish, 1150);
+    return;
+  }
+
+  fitBoundsThenResizeWhenStill(mapInstance, KOREA_PENINSULA_BOUNDS, {
+    padding,
+    duration: 1000,
+    maxZoom: 8,
+  });
+}
+
 
 export default function App() {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -91,6 +132,8 @@ export default function App() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(true);
   const [language, setLanguage] = useState<Language>('en');
+  /** 모바일: 마커를 한 번이라도 누르면 카테고리 버튼을 아이콘만 표시 */
+  const [categoryFiltersCompact, setCategoryFiltersCompact] = useState(false);
 
   const fitPadding = useCallback(() => {
     const isMobile = window.innerWidth < MOBILE_BREAKPOINT_PX;
@@ -99,7 +142,7 @@ export default function App() {
     if (isMobile) {
       return {
         top: drawerOpen ? 204 : 88,
-        right: 168,
+        right: categoryFiltersCompact ? 56 : 168,
         bottom: popupBottom,
         left: drawerOpen ? 232 : 64,
       };
@@ -107,7 +150,7 @@ export default function App() {
 
     const left = 80 + (drawerOpen ? DRAWER_WIDTH_PX : 0);
     return { top: 80, right: 180, bottom: 80, left };
-  }, [drawerOpen, selectedPlace]);
+  }, [drawerOpen, selectedPlace, categoryFiltersCompact]);
 
   const focusPlaceOnMap = useCallback(
     (place: Place) => {
@@ -185,11 +228,7 @@ export default function App() {
     const runFit = () => {
       const m = map.current;
       if (!m?.isStyleLoaded()) return;
-      fitBoundsThenResizeWhenStill(m, KOREA_PENINSULA_BOUNDS, {
-        padding: fitPadding(),
-        duration: 1000,
-        maxZoom: 8,
-      });
+      resetToKoreaPeninsulaView(m, fitPadding());
       initialFitBoundsDoneRef.current = true;
     };
 
@@ -293,11 +332,7 @@ export default function App() {
 
       requestAnimationFrame(() => {
         if (!map.current?.isStyleLoaded()) return;
-        fitBoundsThenResizeWhenStill(map.current, KOREA_PENINSULA_BOUNDS, {
-          padding: fitPadding(),
-          duration: 1000,
-          maxZoom: 8,
-        });
+        resetToKoreaPeninsulaView(map.current, fitPadding());
       });
     },
     [fitPadding],
@@ -335,6 +370,7 @@ export default function App() {
           focusPlaceOnMap(place);
           return;
         }
+        setCategoryFiltersCompact(true);
         setSelectedPlace(place);
       });
 
@@ -352,6 +388,7 @@ export default function App() {
       focusPlaceOnMap(place);
       return;
     }
+    setCategoryFiltersCompact(true);
     setSelectedPlace(place);
   }, [focusPlaceOnMap, selectedPlace]);
 
@@ -381,7 +418,7 @@ export default function App() {
             </span>
           </div>
           <div className="mx-2 h-px shrink-0 bg-cream-200" />
-          <div className="mt-auto shrink-0 pt-2">
+          <div className="mt-auto shrink-0 pt-2 sm:mt-0">
             <div className="flex shrink-0 items-center gap-1 px-3 pb-1">
               <Globe2 size={14} className="shrink-0 text-olive-700" />
               <div className="flex min-w-0 flex-1 items-center gap-1">
@@ -435,6 +472,7 @@ export default function App() {
             categories={categories}
             highlighted={activeCategory}
             language={language}
+            compact={categoryFiltersCompact}
             onSelect={handleCategorySelect}
           />
       </div>

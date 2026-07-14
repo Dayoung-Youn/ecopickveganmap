@@ -7,6 +7,9 @@ export const FILTER_CATEGORY_KEYS = ['완전비건', '비건옵션', '제로웨�
 const BUTTON_BASE =
   'flex w-full min-w-[9.5rem] items-center gap-2 rounded-xl border border-cream-200/90 bg-white/95 px-2.5 py-2 text-left text-[11px] font-semibold shadow-md backdrop-blur-sm transition-all duration-200 sm:min-w-[10.5rem] sm:px-3 sm:py-2.5 sm:text-xs sm:font-medium';
 
+const BUTTON_COMPACT =
+  'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cream-200/90 bg-white/95 p-0 shadow-md backdrop-blur-sm transition-all duration-200 sm:h-auto sm:w-full sm:min-w-[10.5rem] sm:gap-2 sm:px-3 sm:py-2.5 sm:text-left sm:text-xs sm:font-medium';
+
 const CATEGORY_ACTIVE_COLORS: Record<string, string> = {
   전체: '#616e45',
   완전비건: '#5a6a42',
@@ -62,16 +65,20 @@ interface CategoryFilterProps {
   categories: string[];
   highlighted: string | null;
   language: Language;
+  compact?: boolean;
   onSelect: (cat: string | null) => void;
 }
 
-export default function CategoryFilter({ categories, highlighted, language, onSelect }: CategoryFilterProps) {
+export default function CategoryFilter({ categories, highlighted, language, compact = false, onSelect }: CategoryFilterProps) {
+  const buttonClass = compact ? BUTTON_COMPACT : BUTTON_BASE;
+
   return (
-    <div className="pointer-events-auto flex flex-col gap-2">
+    <div className={`pointer-events-auto flex flex-col ${compact ? 'gap-1.5 sm:gap-2' : 'gap-2'}`}>
       <button
         type="button"
         onClick={() => onSelect(null)}
-        className={`${BUTTON_BASE} ${
+        aria-label={UI_COPY[language].allSpots}
+        className={`${buttonClass} ${
           highlighted === null
             ? 'text-white shadow-md'
             : 'text-charcoal-700 hover:border-olive-300 hover:bg-cream-100'
@@ -83,7 +90,9 @@ export default function CategoryFilter({ categories, highlighted, language, onSe
         }
       >
         <span className="flex shrink-0 items-center justify-center [&>svg]:block">{CATEGORY_ICONS['전체']}</span>
-        <span className="min-w-0 truncate leading-snug">{UI_COPY[language].allSpots}</span>
+        <span className={`min-w-0 truncate leading-snug ${compact ? 'sr-only sm:not-sr-only' : ''}`}>
+          {UI_COPY[language].allSpots}
+        </span>
       </button>
       {FILTER_CATEGORY_KEYS.map((key) => {
         const cat = resolveCategoryLabel(categories, key);
@@ -92,8 +101,9 @@ export default function CategoryFilter({ categories, highlighted, language, onSe
           <button
             type="button"
             key={key}
+            aria-label={categoryDisplayLabel(cat, language)}
             onClick={() => onSelect(isHighlighted ? null : cat)}
-            className={`${BUTTON_BASE} ${categoryChipClasses(cat, isHighlighted)}`}
+            className={`${buttonClass} ${categoryChipClasses(cat, isHighlighted)}`}
             style={
               isHighlighted
                 ? { backgroundColor: activeColorForCategory(cat), borderColor: activeColorForCategory(cat) }
@@ -103,7 +113,9 @@ export default function CategoryFilter({ categories, highlighted, language, onSe
             <span className="flex shrink-0 items-center justify-center [&>svg]:block">
               {CATEGORY_ICONS[key] ?? <Leaf size={14} />}
             </span>
-            <span className="min-w-0 truncate leading-snug">{categoryDisplayLabel(cat, language)}</span>
+            <span className={`min-w-0 truncate leading-snug ${compact ? 'sr-only sm:not-sr-only' : ''}`}>
+              {categoryDisplayLabel(cat, language)}
+            </span>
           </button>
         );
       })}
